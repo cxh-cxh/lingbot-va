@@ -7,8 +7,7 @@ import cv2
 from pathlib import Path
 
 import os
-from envs import CONFIGS_PATH
-from envs.utils.create_actor import UnStableError
+from aloha_real import PiperRealEnvironment
 
 import numpy as np
 from pathlib import Path
@@ -358,25 +357,8 @@ def main(usr_args):
         video_save_dir.mkdir(parents=True, exist_ok=True)
         args["eval_video_save_dir"] = video_save_dir
 
-    print("============= Config =============\n")
-    print("\033[95mMessy Table:\033[0m " + str(args["domain_randomization"]["cluttered_table"]))
-    print("\033[95mRandom Background:\033[0m " + str(args["domain_randomization"]["random_background"]))
-    if args["domain_randomization"]["random_background"]:
-        print(" - Clean Background Rate: " + str(args["domain_randomization"]["clean_background_rate"]))
-    print("\033[95mRandom Light:\033[0m " + str(args["domain_randomization"]["random_light"]))
-    if args["domain_randomization"]["random_light"]:
-        print(" - Crazy Random Light Rate: " + str(args["domain_randomization"]["crazy_random_light_rate"]))
-    print("\033[95mRandom Table Height:\033[0m " + str(args["domain_randomization"]["random_table_height"]))
-    print("\033[95mRandom Head Camera Distance:\033[0m " + str(args["domain_randomization"]["random_head_camera_dis"]))
 
-    print("\033[94mHead Camera Config:\033[0m " + str(args["camera"]["head_camera_type"]) + f", " +
-          str(args["camera"]["collect_head_camera"]))
-    print("\033[94mWrist Camera Config:\033[0m " + str(args["camera"]["wrist_camera_type"]) + f", " +
-          str(args["camera"]["collect_wrist_camera"]))
-    print("\033[94mEmbodiment Config:\033[0m " + embodiment_name)
-    print("\n==================================")
-
-    TASK_ENV = class_decorator(args["task_name"])
+    ENV = PiperRealEnvironment(reset_position=metadata.get("reset_pose"), prompt=args.prompt) #TODO: reset position
     args["policy_name"] = policy_name
     usr_args["left_arm_dim"] = len(args["left_embodiment_config"]["arm_joints_name"][0])
     usr_args["right_arm_dim"] = len(args["right_embodiment_config"]["arm_joints_name"][1])
@@ -391,7 +373,7 @@ def main(usr_args):
     model = WebsocketClientPolicy(port=usr_args['port'])
 
     st_seed, suc_num = eval_policy(task_name,
-                                   TASK_ENV,
+                                   ENV,
                                    args,
                                    model,
                                    st_seed,
@@ -413,10 +395,10 @@ def main(usr_args):
 
 def format_obs(observation, prompt):
     return {
-                "observation.images.cam_high": observation["observation"]["head_camera"]["rgb"], # H,W,3
-                "observation.images.cam_left_wrist": observation["observation"]["left_camera"]["rgb"],
-                "observation.images.cam_right_wrist": observation["observation"]["right_camera"]["rgb"],
-                "observation.state": observation["joint_action"]["vector"],
+                "observation.images.cam_high": observation["images"]["cam_high"], # H,W,3
+                "observation.images.cam_left_wrist": observation["images"]["cam_left_wrist"],
+                "observation.images.cam_right_wrist": observation["images"]["cam_right_wrist"],
+                "observation.state": observation["state"],
                 "task": prompt,
             }
 
@@ -433,6 +415,7 @@ def add_init_pose(new_pose, init_pose):
     return np.concatenate([left_pose, right_pose])
 
 def eval_policy(task_name,
+                env,
                 args,
                 model,
                 st_seed,
@@ -460,26 +443,13 @@ def eval_policy(task_name,
     args["eval_mode"] = True
 
     while succ_seed < test_num:
-        # render_freq = args["render_freq"]
-        # args["render_freq"] = 0
 
-        if (not expert_check) or (TASK_ENV.plan_success and TASK_ENV.check_success()):
-            succ_seed += 1
-            suc_test_seed_list.append(now_seed)
-        else:
-            now_seed += 1
-            args["render_freq"] = render_freq
-            continue
-
-        args["render_freq"] = render_freq
-
-        TASK_ENV.setup_demo(now_ep_num=now_id, seed=now_seed, is_test=True, **args)
         episode_info_list = [episode_info["info"]]
         results = generate_episode_descriptions(args["task_name"], episode_info_list, test_num)
         instruction = np.random.choice(results[0][instruction_type])
-        TASK_ENV.set_instruction(instruction=instruction)  # set language instruction
+        env.prompt = instruction  # set language instruction
 
-        if TASK_ENV.eval_video_path is not None:
+        if env.eval_video_path is not None:
             ffmpeg = subprocess.Popen(
                 [
                     "ffmpeg",
@@ -502,15 +472,15 @@ def eval_policy(task_name,
                     "libx264",
                     "-crf",
                     "23",
-                    f"{TASK_ENV.eval_video_path}/episode{TASK_ENV.test_num}.mp4",
+                    f"{env.eval_video_path}/episode{env.test_num}.mp4",
                 ],
                 stdin=subprocess.PIPE,
             )
-            TASK_ENV._set_eval_video_ffmpeg(ffmpeg)
+            env._set_eval_video_ffmpeg(ffmpeg)
 
         succ = False
 
-        prompt = get_instruction()
+        prompt = env.prompt
         ret = model.infer(dict(reset = True, prompt=prompt, save_visualization=save_visualization))
         
         first = True
@@ -518,19 +488,19 @@ def eval_policy(task_name,
         gen_video_list = []
         full_action_history = []
 
-        initial_obs = get_obs() 
-        inint_eef_pose = initial_obs['endpose']['left_endpose'] + \
-        [initial_obs['endpose']['left_gripper']] + \
-        initial_obs['endpose']['right_endpose'] + \
-        [initial_obs['endpose']['right_gripper']]
+        initial_obs = env.get_observation() 
+        inint_eef_pose = initial_obs['eef'][:7] + \
+        [initial_obs['state'][6]] + \
+        initial_obs['eef'][7:] + \
+        [initial_obs['state'][13]]
         inint_eef_pose = np.array(inint_eef_pose, dtype=np.float64)
         initial_formatted_obs = format_obs(initial_obs, prompt)
         full_obs_list.append(initial_formatted_obs)
         first_obs = None
         
-        while TASK_ENV.take_action_cnt<TASK_ENV.step_lim:
+        while env.take_action_cnt<env.step_lim:
             if first:
-                observation = get_obs()
+                observation = env.get_observation()
                 first_obs = format_obs(observation, prompt)
 
             ret = model.infer(dict(obs=first_obs, prompt=prompt, save_visualization=save_visualization, video_guidance_scale=video_guidance_scale, action_guidance_scale=action_guidance_scale)) #(TASK_ENV, model, observation)
@@ -549,30 +519,13 @@ def eval_policy(task_name,
                     raw_action_step = action[:, i, j].flatten() 
                     full_action_history.append(raw_action_step)
 
-                    ee_action = action[:, i, j]
+                    joint_action = action[:, i, j]
                     if action.shape[0] == 14:
-                        ee_action = np.concatenate([
-                            ee_action[:3],
-                            euler2quat(ee_action[3], ee_action[4], ee_action[5]),
-                            ee_action[6:10],
-                            euler2quat(ee_action[10], ee_action[11], ee_action[12]),
-                            ee_action[13:14]
-                        ])
-                    elif action.shape[0] == 16:
-                        ee_action =  add_init_pose(ee_action, inint_eef_pose)
-                        ee_action = np.concatenate([
-                            ee_action[:3],
-                            ee_action[3:7] / np.linalg.norm(ee_action[3:7]),
-                            ee_action[7:11],
-                            ee_action[11:15] / np.linalg.norm(ee_action[11:15]),
-                            ee_action[15:16]
-                        ])
+                        env.apply_action({'action':joint_action})                   
                     else:
                         raise NotImplementedError
-                    take_action(ee_action, action_type='ee')
-                   
                     if (j+1) % action_per_frame == 0:
-                        obs = format_obs(get_obs(), prompt)
+                        obs = format_obs(env.get_observation(), prompt)
                         full_obs_list.append(obs)
                         key_frame_list.append(obs)
                     
@@ -580,8 +533,7 @@ def eval_policy(task_name,
 
             model.infer(dict(obs = key_frame_list, compute_kv_cache=True, imagine=False, save_visualization=save_visualization, state=action))
   
-            if eval_success:
-                succ = True
+            if succ:
                 break
       
 
