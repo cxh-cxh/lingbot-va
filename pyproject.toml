@@ -49,6 +49,11 @@ packages = ["lingbot_va"]
 [tool.setuptools.package-data]
 "lingbot_va" = ["**/*.py"]
 
+[tool.poetry]
+name = "lingbot-va"
+version = "0.1.0"
+package-mode = false
+
 [tool.black]
 line-length = 88
 

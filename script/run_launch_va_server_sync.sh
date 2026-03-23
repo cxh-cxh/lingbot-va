@@ -1,5 +1,6 @@
 #!/usr/bin/bash
-
+source $(poetry env info --path)/bin/activate
+which python
 set -x
 
 umask 007
