@@ -12,8 +12,8 @@ va_aloha_cfg.attn_window = 72
 va_aloha_cfg.frame_chunk_size = 2
 va_aloha_cfg.env_type = 'aloha_real'
 
-va_aloha_cfg.height = 256
-va_aloha_cfg.width = 320
+va_aloha_cfg.height = 224
+va_aloha_cfg.width = 224
 va_aloha_cfg.action_dim = 30
 va_aloha_cfg.action_per_frame = 16
 va_aloha_cfg.obs_cam_keys = [
@@ -31,7 +31,7 @@ va_aloha_cfg.snr_shift = 5.0
 va_aloha_cfg.action_snr_shift = 1.0
 
 va_aloha_cfg.used_action_channel_ids = list(range(14, 20)) + list(
-    range(28, 29)) + list(range(20, 27)) + list(range(29, 30))
+    range(28, 29)) + list(range(21, 27)) + list(range(29, 30))
 inverse_used_action_channel_ids = [
     len(va_aloha_cfg.used_action_channel_ids)
 ] * va_aloha_cfg.action_dim

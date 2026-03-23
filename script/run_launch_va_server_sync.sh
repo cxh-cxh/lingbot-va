@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-source $(poetry env info --path)/bin/activate
+eval $(poetry env activate)
 which python
 set -x
 

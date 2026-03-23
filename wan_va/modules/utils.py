@@ -84,10 +84,13 @@ class WanVAEStreamingWrapper:
         self.feat_cache = [None] * self.enc_conv_num
 
     def encode_chunk(self, x_chunk):
+        print(x_chunk.shape)
+        
         if hasattr(self.vae.config,
                    "patch_size") and self.vae.config.patch_size is not None:
             x_chunk = patchify(x_chunk, self.vae.config.patch_size)
         feat_idx = [0]
+        print(x_chunk.shape)
         out = self.encoder(x_chunk,
                            feat_cache=self.feat_cache,
                            feat_idx=feat_idx)

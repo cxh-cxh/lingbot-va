@@ -7,7 +7,8 @@ import cv2
 from pathlib import Path
 
 import os
-from aloha_real import PiperRealEnvironment
+# from aloha_real import PiperRealEnvironment
+from .aloha_mock import PiperRealEnvironment
 
 import numpy as np
 from pathlib import Path
@@ -30,8 +31,7 @@ from scipy.spatial.transform import Rotation as R
 import json
 from pathlib import Path
 
-from evaluation.robotwin.websocket_client_policy import WebsocketClientPolicy
-from evaluation.robotwin.test_render import Sapien_TEST
+from evaluation.aloha.websocket_client_policy import WebsocketClientPolicy
 
 def write_json(data: dict, fpath: Path) -> None:
     """Write data to a JSON file.
@@ -267,16 +267,16 @@ def eval_function_decorator(policy_name, model_name):
     except ImportError as e:
         raise e
 
-def get_camera_config(camera_type):
-    camera_config_path = os.path.join(robowin_root, "task_config/_camera_config.yml")
+# def get_camera_config(camera_type):
+#     camera_config_path = os.path.join(robowin_root, "task_config/_camera_config.yml")
 
-    assert os.path.isfile(camera_config_path), "task config file is missing"
+#     assert os.path.isfile(camera_config_path), "task config file is missing"
 
-    with open(camera_config_path, "r", encoding="utf-8") as f:
-        args = yaml.load(f.read(), Loader=yaml.FullLoader)
+#     with open(camera_config_path, "r", encoding="utf-8") as f:
+#         args = yaml.load(f.read(), Loader=yaml.FullLoader)
 
-    assert camera_type in args, f"camera {camera_type} is not defined"
-    return args[camera_type]
+#     assert camera_type in args, f"camera {camera_type} is not defined"
+#     return args[camera_type]
 
 
 def get_embodiment_config(robot_file):
@@ -300,68 +300,68 @@ def main(usr_args):
     video_save_dir = None
     video_size = None
 
-    with open(f"./task_config/{task_config}.yml", "r", encoding="utf-8") as f:
-        args = yaml.load(f.read(), Loader=yaml.FullLoader)
+    # with open(f"./task_config/{task_config}.yml", "r", encoding="utf-8") as f:
+        # args = yaml.load(f.read(), Loader=yaml.FullLoader)
 
-    args['task_name'] = task_name
-    args["task_config"] = task_config
-    args["ckpt_setting"] = ckpt_setting
-    args["save_root"] = save_root
+    # args['task_name'] = task_name
+    # args["task_config"] = task_config
+    # args["ckpt_setting"] = ckpt_setting
+    # args["save_root"] = save_root
 
-    embodiment_type = args.get("embodiment")
-    embodiment_config_path = os.path.join(CONFIGS_PATH, "_embodiment_config.yml")
+    # embodiment_type = args.get("embodiment")
+    # embodiment_config_path = os.path.join(CONFIGS_PATH, "_embodiment_config.yml")
 
-    with open(embodiment_config_path, "r", encoding="utf-8") as f:
-        _embodiment_types = yaml.load(f.read(), Loader=yaml.FullLoader)
+    # with open(embodiment_config_path, "r", encoding="utf-8") as f:
+        # _embodiment_types = yaml.load(f.read(), Loader=yaml.FullLoader)
 
-    def get_embodiment_file(embodiment_type):
-        robot_file = _embodiment_types[embodiment_type]["file_path"]
-        if robot_file is None:
-            raise "No embodiment files"
-        return robot_file
+    # def get_embodiment_file(embodiment_type):
+        # robot_file = _embodiment_types[embodiment_type]["file_path"]
+        # if robot_file is None:
+            # raise "No embodiment files"
+        # return robot_file
 
-    with open(CONFIGS_PATH + "_camera_config.yml", "r", encoding="utf-8") as f:
-        _camera_config = yaml.load(f.read(), Loader=yaml.FullLoader)
+    # with open(CONFIGS_PATH + "_camera_config.yml", "r", encoding="utf-8") as f:
+        # _camera_config = yaml.load(f.read(), Loader=yaml.FullLoader)
 
-    head_camera_type = args["camera"]["head_camera_type"]
-    args["head_camera_h"] = _camera_config[head_camera_type]["h"]
-    args["head_camera_w"] = _camera_config[head_camera_type]["w"]
+    # head_camera_type = args["camera"]["head_camera_type"]
+    # args["head_camera_h"] = _camera_config[head_camera_type]["h"]
+    # args["head_camera_w"] = _camera_config[head_camera_type]["w"]
 
-    if len(embodiment_type) == 1:
-        args["left_robot_file"] = get_embodiment_file(embodiment_type[0])
-        args["right_robot_file"] = get_embodiment_file(embodiment_type[0])
-        args["dual_arm_embodied"] = True
-    elif len(embodiment_type) == 3:
-        args["left_robot_file"] = get_embodiment_file(embodiment_type[0])
-        args["right_robot_file"] = get_embodiment_file(embodiment_type[1])
-        args["embodiment_dis"] = embodiment_type[2]
-        args["dual_arm_embodied"] = False
-    else:
-        raise "embodiment items should be 1 or 3"
+    # if len(embodiment_type) == 1:
+        # args["left_robot_file"] = get_embodiment_file(embodiment_type[0])
+        # args["right_robot_file"] = get_embodiment_file(embodiment_type[0])
+        # args["dual_arm_embodied"] = True
+    # elif len(embodiment_type) == 3:
+        # args["left_robot_file"] = get_embodiment_file(embodiment_type[0])
+        # args["right_robot_file"] = get_embodiment_file(embodiment_type[1])
+        # args["embodiment_dis"] = embodiment_type[2]
+        # args["dual_arm_embodied"] = False
+    # else:
+        # raise "embodiment items should be 1 or 3"
 
-    args["left_embodiment_config"] = get_embodiment_config(args["left_robot_file"])
-    args["right_embodiment_config"] = get_embodiment_config(args["right_robot_file"])
+    # args["left_embodiment_config"] = get_embodiment_config(args["left_robot_file"])
+    # args["right_embodiment_config"] = get_embodiment_config(args["right_robot_file"])
 
-    if len(embodiment_type) == 1:
-        embodiment_name = str(embodiment_type[0])
-    else:
-        embodiment_name = str(embodiment_type[0]) + "+" + str(embodiment_type[1])
+    # if len(embodiment_type) == 1:
+        # embodiment_name = str(embodiment_type[0])
+    # else:
+        # embodiment_name = str(embodiment_type[0]) + "+" + str(embodiment_type[1])
 
     save_dir = Path(f"eval_result/{task_name}/{policy_name}/{task_config}/{ckpt_setting}/{current_time}")
     save_dir.mkdir(parents=True, exist_ok=True)
 
-    if args["eval_video_log"]:
-        video_save_dir = save_dir
-        camera_config = get_camera_config(args["camera"]["head_camera_type"])
-        video_size = str(camera_config["w"]) + "x" + str(camera_config["h"])
-        video_save_dir.mkdir(parents=True, exist_ok=True)
-        args["eval_video_save_dir"] = video_save_dir
+    # if args["eval_video_log"]:
+        # video_save_dir = save_dir
+        # camera_config = get_camera_config(args["camera"]["head_camera_type"])
+        # video_size = str(camera_config["w"]) + "x" + str(camera_config["h"])
+        # video_save_dir.mkdir(parents=True, exist_ok=True)
+        # args["eval_video_save_dir"] = video_save_dir
 
 
-    ENV = PiperRealEnvironment(reset_position=metadata.get("reset_pose"), prompt=args.prompt) #TODO: reset position
-    args["policy_name"] = policy_name
-    usr_args["left_arm_dim"] = len(args["left_embodiment_config"]["arm_joints_name"][0])
-    usr_args["right_arm_dim"] = len(args["right_embodiment_config"]["arm_joints_name"][1])
+    ENV = PiperRealEnvironment() #TODO: reset position
+    # args["policy_name"] = policy_name
+    # usr_args["left_arm_dim"] = len(args["left_embodiment_config"]["arm_joints_name"][0])
+    # usr_args["right_arm_dim"] = len(args["right_embodiment_config"]["arm_joints_name"][1])
 
     seed = usr_args["seed"]
 
@@ -374,7 +374,7 @@ def main(usr_args):
 
     st_seed, suc_num = eval_policy(task_name,
                                    ENV,
-                                   args,
+                                #    args,
                                    model,
                                    st_seed,
                                    test_num=test_num,
@@ -416,7 +416,7 @@ def add_init_pose(new_pose, init_pose):
 
 def eval_policy(task_name,
                 env,
-                args,
+                # args,
                 model,
                 st_seed,
                 test_num=100,
@@ -425,12 +425,12 @@ def eval_policy(task_name,
                 save_visualization=False,
                 video_guidance_scale=5.0,
                 action_guidance_scale=5.0):
-    print(f"\033[34mTask Name: {args['task_name']}\033[0m")
-    print(f"\033[34mPolicy Name: {args['policy_name']}\033[0m")
+    # print(f"\033[34mTask Name: {args['task_name']}\033[0m")
+    # print(f"\033[34mPolicy Name: {args['policy_name']}\033[0m")
 
     expert_check = True
     suc = 0
-    test_num = 0
+    test_num = 100
 
     now_id = 0
     succ_seed = 0
@@ -438,51 +438,52 @@ def eval_policy(task_name,
 
 
     now_seed = st_seed
-    clear_cache_freq = args["clear_cache_freq"]
+    # clear_cache_freq = args["clear_cache_freq"]
 
-    args["eval_mode"] = True
+    # args["eval_mode"] = True
 
     while succ_seed < test_num:
 
-        episode_info_list = [episode_info["info"]]
-        results = generate_episode_descriptions(args["task_name"], episode_info_list, test_num)
-        instruction = np.random.choice(results[0][instruction_type])
+        # episode_info_list = [episode_info["info"]]
+        # results = generate_episode_descriptions(args["task_name"], episode_info_list, test_num)
+        # instruction = np.random.choice(results[0][instruction_type])
+        instruction = "test"
         env.prompt = instruction  # set language instruction
 
-        if env.eval_video_path is not None:
-            ffmpeg = subprocess.Popen(
-                [
-                    "ffmpeg",
-                    "-y",
-                    "-loglevel",
-                    "error",
-                    "-f",
-                    "rawvideo",
-                    "-pixel_format",
-                    "rgb24",
-                    "-video_size",
-                    video_size,
-                    "-framerate",
-                    "10",
-                    "-i",
-                    "-",
-                    "-pix_fmt",
-                    "yuv420p",
-                    "-vcodec",
-                    "libx264",
-                    "-crf",
-                    "23",
-                    f"{env.eval_video_path}/episode{env.test_num}.mp4",
-                ],
-                stdin=subprocess.PIPE,
-            )
-            env._set_eval_video_ffmpeg(ffmpeg)
+        # if env.eval_video_path is not None:
+        #     ffmpeg = subprocess.Popen(
+        #         [
+        #             "ffmpeg",
+        #             "-y",
+        #             "-loglevel",
+        #             "error",
+        #             "-f",
+        #             "rawvideo",
+        #             "-pixel_format",
+        #             "rgb24",
+        #             "-video_size",
+        #             video_size,
+        #             "-framerate",
+        #             "10",
+        #             "-i",
+        #             "-",
+        #             "-pix_fmt",
+        #             "yuv420p",
+        #             "-vcodec",
+        #             "libx264",
+        #             "-crf",
+        #             "23",
+        #             f"{env.eval_video_path}/episode{env.test_num}.mp4",
+        #         ],
+        #         stdin=subprocess.PIPE,
+        #     )
+        #     env._set_eval_video_ffmpeg(ffmpeg)
 
         succ = False
 
         prompt = env.prompt
         ret = model.infer(dict(reset = True, prompt=prompt, save_visualization=save_visualization))
-        
+        env.reset()
         first = True
         full_obs_list = []
         gen_video_list = []
@@ -498,11 +499,10 @@ def eval_policy(task_name,
         full_obs_list.append(initial_formatted_obs)
         first_obs = None
         
-        while env.take_action_cnt<env.step_lim:
+        while True:
             if first:
                 observation = env.get_observation()
                 first_obs = format_obs(observation, prompt)
-
             ret = model.infer(dict(obs=first_obs, prompt=prompt, save_visualization=save_visualization, video_guidance_scale=video_guidance_scale, action_guidance_scale=action_guidance_scale)) #(TASK_ENV, model, observation)
             action = ret['action']
             if 'video' in ret:
@@ -520,8 +520,9 @@ def eval_policy(task_name,
                     full_action_history.append(raw_action_step)
 
                     joint_action = action[:, i, j]
+                    print(action.shape)
                     if action.shape[0] == 14:
-                        env.apply_action({'action':joint_action})                   
+                        env.apply_action({'actions':joint_action})                   
                     else:
                         raise NotImplementedError
                     if (j+1) % action_per_frame == 0:
@@ -537,55 +538,55 @@ def eval_policy(task_name,
                 break
       
 
-        vis_dir = Path(args['save_root']) / f'stseed-{st_seed}' / 'visualization' / task_name
-        vis_dir.mkdir(parents=True, exist_ok=True)
-        video_name = f"{TASK_ENV.test_num}_{prompt.replace(' ', '_')}_{succ}.mp4"
-        out_img_file = vis_dir / video_name
-        save_comparison_video(
-            real_obs_list=full_obs_list,
-            imagined_video=None, #gen_video_list,
-            action_history=full_action_history,
-            save_path=str(out_img_file),
-            fps=15 # Suggest adjusting fps based on simulation step
-        )
-        if TASK_ENV.eval_video_path is not None:
-            TASK_ENV._del_eval_video_ffmpeg()
+        # vis_dir = Path(args['save_root']) / f'stseed-{st_seed}' / 'visualization' / task_name
+        # vis_dir.mkdir(parents=True, exist_ok=True)
+        # video_name = f"{TASK_ENV.test_num}_{prompt.replace(' ', '_')}_{succ}.mp4"
+        # out_img_file = vis_dir / video_name
+        # save_comparison_video(
+        #     real_obs_list=full_obs_list,
+        #     imagined_video=None, #gen_video_list,
+        #     action_history=full_action_history,
+        #     save_path=str(out_img_file),
+        #     fps=15 # Suggest adjusting fps based on simulation step
+        # )
+        # if TASK_ENV.eval_video_path is not None:
+            # TASK_ENV._del_eval_video_ffmpeg()
 
         if succ:
-            TASK_ENV.suc += 1
+            suc += 1
             print("\033[92mSuccess!\033[0m")
         else:
             print("\033[91mFail!\033[0m")
 
         now_id += 1
-        TASK_ENV.close_env(clear_cache=((succ_seed + 1) % clear_cache_freq == 0))
+        # TASK_ENV.close_env(clear_cache=((succ_seed + 1) % clear_cache_freq == 0))
 
-        if TASK_ENV.render_freq:
-            TASK_ENV.viewer.close()
+        # if TASK_ENV.render_freq:
+            # TASK_ENV.viewer.close()
 
-        TASK_ENV.test_num += 1
+        # TASK_ENV.test_num += 1
 
         save_dir = Path(args['save_root']) / f'stseed-{st_seed}' / 'metrics' / task_name
         save_dir.mkdir(parents=True, exist_ok=True)
         out_json_file = save_dir / 'res.json'
-        write_json({
-          "succ_num": float(TASK_ENV.suc),
-          "total_num": float(TASK_ENV.test_num),
-          "succ_rate": float(TASK_ENV.suc / TASK_ENV.test_num),
-        }, out_json_file)
+        # write_json({
+        #   "succ_num": float(TASK_ENV.suc),
+        #   "total_num": float(TASK_ENV.test_num),
+        #   "succ_rate": float(TASK_ENV.suc / TASK_ENV.test_num),
+        # }, out_json_file)
         
-        print(
-            f"\033[93m{task_name}\033[0m | \033[94m{args['policy_name']}\033[0m | \033[92m{args['task_config']}\033[0m | \033[91m{args['ckpt_setting']}\033[0m\n"
-            f"Success rate: \033[96m{TASK_ENV.suc}/{TASK_ENV.test_num}\033[0m => \033[95m{round(TASK_ENV.suc/TASK_ENV.test_num*100, 1)}%\033[0m, current seed: \033[90m{now_seed}\033[0m\n"
-        )
+        # print(
+        #     f"\033[93m{task_name}\033[0m | \033[94m{args['policy_name']}\033[0m | \033[92m{args['task_config']}\033[0m | \033[91m{args['ckpt_setting']}\033[0m\n"
+        #     f"Success rate: \033[96m{TASK_ENV.suc}/{TASK_ENV.test_num}\033[0m => \033[95m{round(TASK_ENV.suc/TASK_ENV.test_num*100, 1)}%\033[0m, current seed: \033[90m{now_seed}\033[0m\n"
+        # )
         now_seed += 1
 
-    return now_seed, TASK_ENV.suc
+    return now_seed, suc
 
 
 def parse_args_and_config():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, required=True)
+    # parser.add_argument("--config", type=str, required=True)
     parser.add_argument("--overrides", nargs=argparse.REMAINDER)
     parser.add_argument("--port", type=int, default=8000, help='remote policy socket port.')
     parser.add_argument("--save_root", type=str, default="results/default_vis_path")
@@ -594,9 +595,9 @@ def parse_args_and_config():
     parser.add_argument("--test_num", type=int, default=100)
     args = parser.parse_args()
 
-    with open(args.config, "r", encoding="utf-8") as f:
-        config = yaml.safe_load(f)
-
+    # with open(args.config, "r", encoding="utf-8") as f:
+    #     config = yaml.safe_load(f)
+    config = {}
     # Parse overrides
     def parse_override_pairs(pairs):
         override_dict = {}
