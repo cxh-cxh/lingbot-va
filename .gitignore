@@ -1,5 +1,6 @@
 .venv/
 .vscode/
+eval_result/
 train_out/
 visualization/
 __pycache__/
