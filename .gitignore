@@ -1,5 +1,6 @@
-.venv
-.vscode
-train_out
-visualization
+.venv/
+.vscode/
+train_out/
+visualization/
+__pycache__/
 poetry.lock
