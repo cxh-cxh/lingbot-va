@@ -1,7 +1,9 @@
 .venv/
 .vscode/
+data/
 eval_result/
 train_out/
 visualization/
 __pycache__/
 poetry.lock
+*.tar.gz

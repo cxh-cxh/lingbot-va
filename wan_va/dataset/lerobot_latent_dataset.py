@@ -240,6 +240,9 @@ class LatentLeRobotDataset(LeRobotDataset):
         if self.config.env_type == 'robotwin_tshape':
             wrist_latent = torch.cat(latent_lst[1:], dim=2)
             cat_latent = torch.cat([wrist_latent, latent_lst[0]], dim=1)
+        elif self.config.env_type == "aloha_real":
+            wrist_latent = torch.cat(latent_lst[1:], dim=2)
+            cat_latent = torch.cat([wrist_latent, latent_lst[0]], dim=1)
         else:
             cat_latent = torch.cat(latent_lst, dim=2)
 
@@ -261,6 +264,8 @@ class LatentLeRobotDataset(LeRobotDataset):
             left_action = get_relative_pose(action[:, :7])
             right_action = get_relative_pose(action[:, 8:15])
             action = np.concatenate([left_action, action[:, 7:8], right_action, action[:, 15:16]], axis=1)
+        # elif self.config.env_type == "aloha_real":
+            
         action = np.pad(action, pad_width=((frame_stride * 4, 0), (0, 0)), mode='constant', constant_values=0)
 
         latent_frame_num = (len(latent_frame_ids) - 1) // 4 + 1

@@ -6,7 +6,7 @@ from .shared_config import va_shared_cfg
 va_aloha_cfg = EasyDict(__name__='Config: VA aloha')
 va_aloha_cfg.update(va_shared_cfg)
 
-va_aloha_cfg.wan22_pretrained_model_name_or_path = "/inspire/hdd/project/robot-reasoning/xiangyushun-p-xiangyushun/.cache/lingbot/lingbot-va-posttrain-robotwin"
+va_aloha_cfg.wan22_pretrained_model_name_or_path = "/inspire/qb-ilm/project/robot-reasoning/public/model/robbyant/lingbot-va-base"
 
 va_aloha_cfg.attn_window = 72
 va_aloha_cfg.frame_chunk_size = 2
@@ -42,13 +42,35 @@ va_aloha_cfg.inverse_used_action_channel_ids = inverse_used_action_channel_ids
 va_aloha_cfg.action_norm_method = 'quantiles'
 va_aloha_cfg.norm_stat = {
     "q01": [
-        -0.06172713458538055, -3.6716461181640625e-05, -0.08783501386642456,
-        -1, -1, -1, -1, -0.3547105032205582, -1.3113021850585938e-06,
-        -0.11975435614585876, -1, -1, -1, -1
+      -0.13637718558311462,
+      0.005198311991989613,
+      -1.055068027973175,
+      -0.3051827847957611,
+      -0.9832136034965515,
+      -1.5085920095443726,
+      0.0,
+      -0.22783608734607697,
+      -0.00582629581913352,
+      -0.28984948992729187,
+      -1.485670566558838,
+      -0.7243970036506653,
+      -1.4769912958145142,
+      0.0
     ] + [0.] * 16,
     "q99": [
-        0.3462600058317184, 0.39966784834861746, 0.14745532035827624, 1, 1, 1,
-        1, 0.034201726913452024, 0.39142737388610793, 0.1792279863357542, 1, 1,
-        1, 1
+      0.2878609001636505,
+      2.0274462699890137,
+      -0.0008896440267562866,
+      1.495966047048569,
+      0.4261394739151001,
+      0.24735592305660248,
+      0.06972000002861023,
+      0.059135161340236664,
+      0.3765985071659088,
+      0.0,
+      1.5442126989364624,
+      0.8024240136146545,
+      1.5994752645492554,
+      0.026319999247789383
     ] + [0.] * 14 + [1.0, 1.0],
 }
