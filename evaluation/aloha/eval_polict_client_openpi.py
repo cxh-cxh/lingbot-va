@@ -447,7 +447,7 @@ def eval_policy(task_name,
         # episode_info_list = [episode_info["info"]]
         # results = generate_episode_descriptions(args["task_name"], episode_info_list, test_num)
         # instruction = np.random.choice(results[0][instruction_type])
-        instruction = "test"
+        instruction = "Turn on the tap."
         env.prompt = instruction  # set language instruction
 
         # if env.eval_video_path is not None:
