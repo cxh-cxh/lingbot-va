@@ -36,4 +36,4 @@ python -m torch.distributed.run \
     --local-ranks-filter=${log_rank} \
     --master_port ${master_port} \
     --tee 3 \
-    -m wan_va.train --config-name ${config_name} $overrides
+    -m wan_va.train --config-name ${config_name} $overrides   --save-root /inspire/qb-ilm/project/robot-reasoning/xiangyushun-p-xiangyushun/ckpt/lingbotva

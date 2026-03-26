@@ -35,6 +35,7 @@ XLA_PYTHON_CLIENT_MEM_FRACTION=0.9 python -m evaluation.aloha.eval_polict_client
     --video_guidance_scale 5 \
     --action_guidance_scale 1 \
     --test_num 100 \
+    --host 0.0.0.0 \
     --port ${PORT}
 
 

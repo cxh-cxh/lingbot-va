@@ -49,7 +49,6 @@ def construct_lerobot_multi_processor(config,
     repo_list = [v.split('/meta/info.json')[0] for v in repo_list]
     with Pool(num_init_worker) as pool:
         datasets_out_lst = pool.map(construct_func, repo_list)
-                
     return datasets_out_lst
 
 def get_relative_pose(pose):
@@ -240,12 +239,8 @@ class LatentLeRobotDataset(LeRobotDataset):
         if self.config.env_type == 'robotwin_tshape':
             wrist_latent = torch.cat(latent_lst[1:], dim=2)
             cat_latent = torch.cat([wrist_latent, latent_lst[0]], dim=1)
-        elif self.config.env_type == "aloha_real":
-            wrist_latent = torch.cat(latent_lst[1:], dim=2)
-            cat_latent = torch.cat([wrist_latent, latent_lst[0]], dim=1)
         else:
             cat_latent = torch.cat(latent_lst, dim=2)
-
         text_emb = data_dict[f"{self.used_video_keys[0]}.text_emb"]
         if torch.rand(1).item() < self.cfg_prob:
             text_emb = self.empty_emb

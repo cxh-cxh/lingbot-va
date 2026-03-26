@@ -21,6 +21,7 @@ import torch
 
 from threading import Thread
 import ros_oper
+import copy
 
 #this is  a camera name list for config
 CAMERA_NAMES = ['cam_high', 'cam_right_wrist', 'cam_left_wrist']
@@ -288,7 +289,7 @@ class PiperRealEnvironment(_environment.Environment):
         if self._ts is None:
             raise RuntimeError("Timestep is not set. Call reset() first.")
 
-        obs = self._ts.observation
+        obs = copy.deepcopy(self._ts.observation)
         
         for k in list(obs["images"].keys()):
             if "_depth" in k:

@@ -1,5 +1,6 @@
 .venv/
 .vscode/
+wandb/
 data/
 eval_result/
 train_out/

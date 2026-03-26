@@ -8,9 +8,9 @@ va_aloha_train_cfg.update(va_aloha_cfg)
 
 # va_aloha_train_cfg.resume_from = '/robby/share/Robotics/lilin1/code/Wan_VA_Release/train_out/checkpoints/checkpoint_step_10'
 
-va_aloha_train_cfg.dataset_path = 'data/turn_on_tap'
+va_aloha_train_cfg.dataset_path = '/inspire/hdd/project/robot-reasoning/xiangyushun-p-xiangyushun/worldmodelgroup/lingbot-va/data/turn_on_tap'
 va_aloha_train_cfg.empty_emb_path = os.path.join(va_aloha_train_cfg.dataset_path, 'empty_emb.pt')
-va_aloha_train_cfg.enable_wandb = True
+va_aloha_train_cfg.enable_wandb = False
 va_aloha_train_cfg.load_worker = 16
 va_aloha_train_cfg.save_interval = 1000
 va_aloha_train_cfg.gc_interval = 50

@@ -9,6 +9,7 @@ from PIL import Image
 import sys
 from decord import VideoReader, cpu
 import av
+import torch.nn.functional as F
 
 from wan.modules.vae2_2 import Wan2_2_VAE
 from wan.modules.t5 import T5EncoderModel
@@ -211,6 +212,15 @@ class MultiCamLatentExtractor:
             # result 是 list, 取第一个元素 [actual_len, 4096]
             text_emb = result[0]
             text_emb = text_emb.to(torch.bfloat16).cpu()
+            
+            if text_emb.shape[0] < self.t5_encoder.text_len:
+            # 在维度1（seq_len）右侧补零
+                pad_size = self.t5_encoder.text_len - text_emb.shape[0]
+                text_emb = F.pad(
+                    text_emb, 
+                    (0, 0, 0, pad_size),  # (左, 右, 上, 下) - 在seq_len维度的右侧补
+                    value=0
+                )
             
             return text_emb
             
@@ -437,7 +447,7 @@ if __name__ == "__main__":
     parser.add_argument("--vae_checkpoint", type=str, required=True, help="VAE checkpoint path")
     parser.add_argument("--t5_checkpoint", type=str, required=True, help="T5 encoder checkpoint path")
     parser.add_argument("--t5_tokenizer", type=str, default="google/umt5-xxl", help="T5 tokenizer path (local dir or 'google/umt5-xxl')")
-    parser.add_argument("--text_len", type=int, default=256, help="Max text sequence length (default: 256)")
+    parser.add_argument("--text_len", type=int, default=512, help="Max text sequence length (default: 512)")
     parser.add_argument("--output_dir", type=str, default=None, help="Output directory")
     parser.add_argument("--height", type=int, default=256, help="Target height")
     parser.add_argument("--width", type=int, default=256, help="Target width")
