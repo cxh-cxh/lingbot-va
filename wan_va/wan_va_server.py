@@ -461,11 +461,6 @@ class VA_Server:
 
     def _infer(self, obs, frame_st_id=0):
         frame_chunk_size = self.job_config.frame_chunk_size
-        print(f"PyTorch version: {torch.__version__}")
-        print(f"Threads: {torch.get_num_threads()}")
-        print(f"Interop threads: {torch.get_num_interop_threads()}")
-        print(f"OMP_NUM_THREADS: {os.environ.get('OMP_NUM_THREADS', 'not set')}")
-        print(f"MKL_NUM_THREADS: {os.environ.get('MKL_NUM_THREADS', 'not set')}")
         if frame_st_id == 0:
             init_latent = self._encode_obs(obs)
             self.init_latent = init_latent
@@ -511,7 +506,6 @@ class VA_Server:
         ):
             # 1. Video Generation Loop
             for i, t in enumerate(tqdm(timesteps)):
-                print(i,t)
                 last_step = i == len(timesteps) - 1
                 latent_cond = init_latent[:, :, 0:1].to(
                     self.dtype) if frame_st_id == 0 else None
@@ -547,7 +541,6 @@ class VA_Server:
                 latents[:, :, 0:1] = latent_cond if frame_st_id == 0 else latents[:, :, 0:1]
 
             for i, t in enumerate(tqdm(action_timesteps)):
-                print(i,t)
                 last_step = i == len(action_timesteps) - 1
                 action_cond = torch.zeros(
                     [
