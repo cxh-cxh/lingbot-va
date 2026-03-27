@@ -36,18 +36,30 @@ from utils import (
     run_async_server_mode,
     save_async,
 )
-
+import cpuinfo
 
 class VA_Server:
 
-    def __init__(self, job_config):
+    def __init__(self, job_config):     
         self.cache_name = 'pos'
         self.job_config = job_config
         self.save_root = job_config.save_root
         self.dtype = job_config.param_dtype
         self.device = torch.device(f"cuda:{job_config.local_rank}")
         self.enable_offload = getattr(job_config, 'enable_offload', True)  # offload vae & text_encoder to save vram
-
+        
+        
+        ##==bf16 is not available for i-series cpu==##
+        info = cpuinfo.get_cpu_info()
+        flags = info.get('flags', [])
+        if not self.enable_offload or 'avx512_bf16' in flags:
+            self.bf16_avail = True
+        else:
+            print("The CPU does not support BF16, changing offloaded modules precision to FP32")
+            self.bf16_avail = False
+        ##==========================================##
+        
+        
         self.scheduler = FlowMatchScheduler(shift=self.job_config.snr_shift,
                                             sigma_min=0.0,
                                             extra_one_step=True)
@@ -61,7 +73,7 @@ class VA_Server:
         self.vae = load_vae(
             os.path.join(job_config.wan22_pretrained_model_name_or_path,
                          'vae'),
-            torch_dtype=torch.float32,
+            torch_dtype=self.dtype if self.bf16_avail else torch.float32,
             torch_device='cpu' if self.enable_offload else self.device,
         )
         self.streaming_vae = WanVAEStreamingWrapper(self.vae)
@@ -73,7 +85,7 @@ class VA_Server:
         self.text_encoder = load_text_encoder(
             os.path.join(job_config.wan22_pretrained_model_name_or_path,
                          'text_encoder'),
-            torch_dtype=torch.float32,
+            torch_dtype=self.dtype if self.bf16_avail else torch.float32,
             torch_device='cpu' if self.enable_offload else self.device,
         )
         if job_config.finetune_model_path:
@@ -359,9 +371,9 @@ class VA_Server:
                                               dim=0) / 255.0 * 2.0 - 1.0
             vae_device = next(self.streaming_vae.vae.parameters()).device
             enc_out_high = self.streaming_vae.encode_chunk(
-                videos_high.to(vae_device).to(self.dtype))
+                videos_high.to(vae_device).to(self.dtype if self.bf16_avail else torch.float32))
             enc_out_left_and_right = self.streaming_vae_half.encode_chunk(
-                videos_left_and_right.to(vae_device).to(self.dtype))
+                videos_left_and_right.to(vae_device).to(self.dtype if self.bf16_avail else torch.float32))
             enc_out = torch.cat([
                 torch.cat(enc_out_left_and_right.split(1, dim=0), dim=-1),
                 enc_out_high
@@ -370,7 +382,7 @@ class VA_Server:
         else:
             videos = torch.cat(videos, dim=0) / 255.0 * 2.0 - 1.0
             vae_device = next(self.streaming_vae.vae.parameters()).device
-            videos_chunk = videos.to(vae_device).to(self.dtype)
+            videos_chunk = videos.to(vae_device).to(self.dtype if self.bf16_avail else torch.float32)
             enc_out = self.streaming_vae.encode_chunk(videos_chunk)
 
         enc_out = enc_out.to(self.dtype)

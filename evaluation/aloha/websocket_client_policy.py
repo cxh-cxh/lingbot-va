@@ -49,12 +49,12 @@ class WebsocketClientPolicy:
                     compression=None, 
                     max_size=None, 
                     additional_headers=headers,
-                    ping_interval=None, 
                     close_timeout=10
                 )
                 metadata = unpackb(conn.recv())
                 return conn, metadata
             except (ConnectionRefusedError, Exception) as e:
+                print(e)
                 logging.info(f"Still waiting for server... (Error: {e})")
                 time.sleep(5)
 

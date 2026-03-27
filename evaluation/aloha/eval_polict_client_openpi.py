@@ -7,7 +7,7 @@ import cv2
 from pathlib import Path
 
 import os
-# from aloha_real import PiperRealEnvironment
+# from .aloha_real import PiperRealEnvironment
 from .aloha_mock import PiperRealEnvironment
 
 import numpy as np
@@ -370,6 +370,7 @@ def main(usr_args):
     suc_nums = []
     test_num = usr_args["test_num"]
 
+    print("Start",usr_args['host'],usr_args['port'])
     
     model = WebsocketClientPolicy(host=usr_args['host'],port=usr_args['port'])
 
@@ -481,8 +482,9 @@ def eval_policy(task_name,
         #     env._set_eval_video_ffmpeg(ffmpeg)
 
         succ = False
-        action_cnt = 0
+
         prompt = env.prompt
+
         ret = model.infer(dict(reset = True, prompt=prompt, save_visualization=save_visualization))
         env.reset()
         first = True
@@ -499,7 +501,9 @@ def eval_policy(task_name,
         initial_formatted_obs = format_obs(initial_obs, prompt)
         full_obs_list.append(initial_formatted_obs)
         first_obs = None
+        action_cnt = 0
         start_time = time.time()
+
         while True:
             if first:
                 observation = env.get_observation()
@@ -513,7 +517,7 @@ def eval_policy(task_name,
 
             assert action.shape[2] % 4 == 0
             action_per_frame = action.shape[2] // 4
-            print("ACTION:",action.shape)
+
             start_idx = 1 if first else 0
             for i in range(start_idx, action.shape[1]):
                 for j in range(action.shape[2]):
@@ -522,8 +526,8 @@ def eval_policy(task_name,
 
                     joint_action = action[:, i, j]
                     if action.shape[0] == 14:
-                        action_cnt += 1
-                        print("Total actions:",action_cnt,"Avg time:",(time.time()-start_time)/action_cnt)
+                        action_cnt+=1
+                        print(action_cnt,(time.time()-start_time)/action_cnt)
                         env.apply_action({'actions':joint_action})                   
                     else:
                         raise NotImplementedError

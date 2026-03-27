@@ -91,7 +91,6 @@ class WanVAEStreamingWrapper:
             x_chunk = patchify(x_chunk, self.vae.config.patch_size)
         feat_idx = [0]
         print(x_chunk.shape)
-        x_chunk = x_chunk.to(torch.float32)
         out = self.encoder(x_chunk,
                            feat_cache=self.feat_cache,
                            feat_idx=feat_idx)

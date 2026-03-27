@@ -6,8 +6,8 @@ from openpi_client import image_tools
 from openpi_client.runtime import environment as _environment
 from typing_extensions import override
 
-from logger import ModelInputObservationSaver as _obs_saver
-
+from .logger import ModelInputObservationSaver as _obs_saver
+import copy
 
 
 from typing import Optional, List
@@ -20,8 +20,7 @@ import cv2
 import torch
 
 from threading import Thread
-import ros_oper
-import copy
+import evaluation.aloha.ros_oper as ros_oper
 
 #this is  a camera name list for config
 CAMERA_NAMES = ['cam_high', 'cam_right_wrist', 'cam_left_wrist']
@@ -185,8 +184,9 @@ class PiperRealEnv:
 
             qpos = np.concatenate(
                 (np.array(puppet_arm_left.position), np.array(puppet_arm_right.position)), axis=0)
-            eef = np.concatenate(
-                (np.array(puppet_eef_left.pose), np.array(puppet_eef_right.pose)), axis=0)
+            # eef = np.concatenate(
+                # (np.array([puppet_eef_left.pose.position]), np.array(puppet_eef_right.pose)), axis=0)
+            eef = np.zeros(14)
             # qpos = torch.from_numpy(qpos).float().cuda()
             # qpos = qpos.unsqueeze(0)
 
@@ -262,8 +262,8 @@ class PiperRealEnvironment(_environment.Environment):
     def __init__(
         self,
         reset_position: Optional[List[float]] = None,  # noqa: UP006,UP007
-        render_height: int = 224,
-        render_width: int = 224,
+        render_height: int = 256,
+        render_width: int = 256,
         prompt: str = "",
     ) -> None:
         self._env = make_real_env(init_node=True, reset_position=reset_position)
@@ -299,6 +299,8 @@ class PiperRealEnvironment(_environment.Environment):
             img = image_tools.convert_to_uint8(
                 image_tools.resize_with_pad(obs["images"][cam_name], self._render_height, self._render_width)
             )
+            obs["images"][cam_name] = img
+            print(img.shape)
             # obs["images"][cam_name] = einops.rearrange(img, "h w c -> c h w")
             
         #normalization for qpos puppet gript: TODO
@@ -307,7 +309,7 @@ class PiperRealEnvironment(_environment.Environment):
         if self.save_obs:
             self.frame_cnt = self.frame_cnt+1
             self.saver.save_input_state_to_csv(obs["qpos"])
-            self.saver.save_images_to_folder(obs["images"],frame_id=self.frame_cnt)
+            # self.saver.save_images_to_folder(obs["images"],frame_id=self.frame_cnt)
         print("main obs")
         return {
             "state": obs["qpos"],
