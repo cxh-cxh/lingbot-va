@@ -61,7 +61,7 @@ class VA_Server:
         self.vae = load_vae(
             os.path.join(job_config.wan22_pretrained_model_name_or_path,
                          'vae'),
-            torch_dtype=self.dtype,
+            torch_dtype=torch.float32,
             torch_device='cpu' if self.enable_offload else self.device,
         )
         self.streaming_vae = WanVAEStreamingWrapper(self.vae)
@@ -73,16 +73,23 @@ class VA_Server:
         self.text_encoder = load_text_encoder(
             os.path.join(job_config.wan22_pretrained_model_name_or_path,
                          'text_encoder'),
-            torch_dtype=self.dtype,
+            torch_dtype=torch.float32,
             torch_device='cpu' if self.enable_offload else self.device,
         )
-
-        self.transformer = load_transformer(
+        if job_config.finetune_model_path:
+            self.transformer = load_transformer(
+            os.path.join(job_config.finetune_model_path,
+                         'transformer'),
+            torch_dtype=self.dtype,
+            torch_device=self.device,
+            )
+        else:
+            self.transformer = load_transformer(
             os.path.join(job_config.wan22_pretrained_model_name_or_path,
                          'transformer'),
             torch_dtype=self.dtype,
             torch_device=self.device,
-        )
+            )
         shard_fn = shard_model
         self.transformer = _configure_model(model=self.transformer,
                                             shard_fn=shard_fn,
@@ -366,6 +373,7 @@ class VA_Server:
             videos_chunk = videos.to(vae_device).to(self.dtype)
             enc_out = self.streaming_vae.encode_chunk(videos_chunk)
 
+        enc_out = enc_out.to(self.dtype)
         mu, logvar = torch.chunk(enc_out, 2, dim=1)
         latents_mean = torch.tensor(self.vae.config.latents_mean).to(mu.device)
         latents_std = torch.tensor(self.vae.config.latents_std).to(mu.device)
@@ -441,6 +449,11 @@ class VA_Server:
 
     def _infer(self, obs, frame_st_id=0):
         frame_chunk_size = self.job_config.frame_chunk_size
+        print(f"PyTorch version: {torch.__version__}")
+        print(f"Threads: {torch.get_num_threads()}")
+        print(f"Interop threads: {torch.get_num_interop_threads()}")
+        print(f"OMP_NUM_THREADS: {os.environ.get('OMP_NUM_THREADS', 'not set')}")
+        print(f"MKL_NUM_THREADS: {os.environ.get('MKL_NUM_THREADS', 'not set')}")
         if frame_st_id == 0:
             init_latent = self._encode_obs(obs)
             self.init_latent = init_latent
@@ -486,6 +499,7 @@ class VA_Server:
         ):
             # 1. Video Generation Loop
             for i, t in enumerate(tqdm(timesteps)):
+                print(i,t)
                 last_step = i == len(timesteps) - 1
                 latent_cond = init_latent[:, :, 0:1].to(
                     self.dtype) if frame_st_id == 0 else None
@@ -521,6 +535,7 @@ class VA_Server:
                 latents[:, :, 0:1] = latent_cond if frame_st_id == 0 else latents[:, :, 0:1]
 
             for i, t in enumerate(tqdm(action_timesteps)):
+                print(i,t)
                 last_step = i == len(action_timesteps) - 1
                 action_cond = torch.zeros(
                     [

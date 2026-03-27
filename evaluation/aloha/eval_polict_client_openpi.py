@@ -23,6 +23,7 @@ import pdb
 import numpy as np
 
 import traceback
+import time
 
 import imageio
 import numpy as np
@@ -480,7 +481,7 @@ def eval_policy(task_name,
         #     env._set_eval_video_ffmpeg(ffmpeg)
 
         succ = False
-
+        action_cnt = 0
         prompt = env.prompt
         ret = model.infer(dict(reset = True, prompt=prompt, save_visualization=save_visualization))
         env.reset()
@@ -498,7 +499,7 @@ def eval_policy(task_name,
         initial_formatted_obs = format_obs(initial_obs, prompt)
         full_obs_list.append(initial_formatted_obs)
         first_obs = None
-        
+        start_time = time.time()
         while True:
             if first:
                 observation = env.get_observation()
@@ -512,7 +513,7 @@ def eval_policy(task_name,
 
             assert action.shape[2] % 4 == 0
             action_per_frame = action.shape[2] // 4
-
+            print("ACTION:",action.shape)
             start_idx = 1 if first else 0
             for i in range(start_idx, action.shape[1]):
                 for j in range(action.shape[2]):
@@ -520,8 +521,9 @@ def eval_policy(task_name,
                     full_action_history.append(raw_action_step)
 
                     joint_action = action[:, i, j]
-                    print(action.shape)
                     if action.shape[0] == 14:
+                        action_cnt += 1
+                        print("Total actions:",action_cnt,"Avg time:",(time.time()-start_time)/action_cnt)
                         env.apply_action({'actions':joint_action})                   
                     else:
                         raise NotImplementedError

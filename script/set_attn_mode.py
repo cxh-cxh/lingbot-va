@@ -22,7 +22,10 @@ def main():
     
     args = parser.parse_args()
     
-    config_path = Path(VA_CONFIGS[args.config].wan22_pretrained_model_name_or_path) / "transformer" / "config.json"
+    if VA_CONFIGS[args.config].finetune_model_path:
+        config_path = Path(VA_CONFIGS[args.config].finetune_model_path) / "transformer" / "config.json"
+    else:
+        config_path = Path(VA_CONFIGS[args.config].wan22_pretrained_model_name_or_path) / "transformer" / "config.json"
     
     with open(config_path,'r') as f:
         config = json.load(f)

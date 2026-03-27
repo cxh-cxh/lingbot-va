@@ -175,7 +175,8 @@ class PiperRealEnv:
             right_action = act[state_len:]
 
             if  not ros_config["disable_puppet_arm"]:
-                print(left_action, right_action)  # puppet_arm_publish_continuous_thread
+                # print(left_action, right_action)  # puppet_arm_publish_continuous_thread
+                pass
 
             if ros_config["use_robot_base"]:
                 vel_action = act[14:16]

@@ -6,8 +6,8 @@ from .shared_config import va_shared_cfg
 va_aloha_cfg = EasyDict(__name__='Config: VA aloha')
 va_aloha_cfg.update(va_shared_cfg)
 
-va_aloha_cfg.wan22_pretrained_model_name_or_path = "/inspire/qb-ilm/project/robot-reasoning/public/model/robbyant/lingbot-va-base"
-
+va_aloha_cfg.wan22_pretrained_model_name_or_path = "/home/rhos/.cache/modelscope/hub/models/Robbyant/lingbot-va-base"
+va_aloha_cfg.finetune_model_path = "/mnt/sdb/ckpt/lingbot/turn_on_tap_step_30000"
 va_aloha_cfg.attn_window = 72
 va_aloha_cfg.frame_chunk_size = 2
 va_aloha_cfg.env_type = 'aloha_real'
